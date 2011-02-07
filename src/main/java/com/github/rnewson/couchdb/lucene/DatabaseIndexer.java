@@ -461,6 +461,50 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		}
 	}
 
+    public IndexReader getReader(final HttpServletRequest req,
+            final HttpServletResponse resp) throws IOException, JSONException {
+		final IndexState state = getState(req, resp);
+        return state.borrowReader(isStaleOk(req));
+    }
+
+    public void makeResponse(final JSONArray result,
+            final HttpServletRequest req,
+            final HttpServletResponse resp) throws IOException, JSONException {
+        final IndexState state = getState(req, resp);
+
+		if (state == null)
+			return;
+		final String etag = state.getEtag();
+
+        resp.setHeader("ETag", etag);
+		resp.setHeader("Cache-Control", "must-revalidate");
+		ServletUtils.setResponseContentTypeAndEncoding(req, resp);
+
+		final Object json = result.length() > 1 ? result : result.getJSONObject(0);
+		final String callback = req.getParameter("callback");
+		final String body;
+		if (callback != null) {
+			body = String.format("%s(%s)", callback, json);
+		} else {
+		    if (json instanceof JSONObject) {
+		        final JSONObject obj = (JSONObject) json;
+		        body = getBooleanParameter(req, "debug") ?
+		            obj.toString(2) : obj.toString();
+		    } else {
+		        final JSONArray arr = (JSONArray) json;
+                body = getBooleanParameter(req, "debug") ?
+		            arr.toString(2) : arr.toString();
+		    }
+		}
+
+		final Writer writer = resp.getWriter();
+		try {
+			writer.write(body);
+		} finally {
+			writer.close();
+		}
+    }
+
 	public void search(final HttpServletRequest req,
 			final HttpServletResponse resp) throws IOException, JSONException {
 		final IndexState state = getState(req, resp);
@@ -502,7 +546,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 					}
 					queryRow.put("freqs", freqs);
 				} else {
-					// Perform the search.
+                    // Perform the search.
 					final TopDocs td;
 					final StopWatch stopWatch = new StopWatch();
 
@@ -514,6 +558,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 							.getParameter("sort"));
 					final int skip = getIntParameter(req, "skip", 0);
 
+                    
 					if (sort == null) {
 						td = searcher.search(q, null, skip + limit);
 					} else {
@@ -615,33 +660,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			state.returnSearcher(searcher);
 		}
 
-		resp.setHeader("ETag", etag);
-		resp.setHeader("Cache-Control", "must-revalidate");
-		ServletUtils.setResponseContentTypeAndEncoding(req, resp);
-
-		final Object json = result.length() > 1 ? result : result.getJSONObject(0);
-		final String callback = req.getParameter("callback");
-		final String body;
-		if (callback != null) {
-			body = String.format("%s(%s)", callback, json);
-		} else {
-		    if (json instanceof JSONObject) {
-		        final JSONObject obj = (JSONObject) json;
-		        body = getBooleanParameter(req, "debug") ?
-		            obj.toString(2) : obj.toString();
-		    } else {
-		        final JSONArray arr = (JSONArray) json;
-                body = getBooleanParameter(req, "debug") ?
-		            arr.toString(2) : arr.toString();
-		    }
-		}
-
-		final Writer writer = resp.getWriter();
-		try {
-			writer.write(body);
-		} finally {
-			writer.close();
-		}
+	    makeResponse(result, req, resp);	
 	}
 
 	private String[] getQueryStrings(final HttpServletRequest req) {

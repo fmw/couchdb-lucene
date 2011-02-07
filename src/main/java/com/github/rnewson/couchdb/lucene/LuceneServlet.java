@@ -39,6 +39,8 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import com.github.rnewson.couchdb.lucene.Suggestions;
+
 import com.github.rnewson.couchdb.lucene.couchdb.Couch;
 import com.github.rnewson.couchdb.lucene.couchdb.Database;
 import com.github.rnewson.couchdb.lucene.couchdb.DesignDocument;
@@ -183,12 +185,20 @@ public final class LuceneServlet extends HttpServlet {
 			return;
 		case 5:
 			final DatabaseIndexer indexer = getIndexer(req);
+
 			if (indexer == null) {
 			    ServletUtils.sendJsonError(req, resp, 500, "error_creating_index");
 			    return;
 			}
 			
-			if (req.getParameter("q") == null) {
+			final Suggestions suggester = new Suggestions(this.root,
+                indexer.getReader(req, resp));
+
+			if (req.getParameter("suggest_field") != null) {
+				JSONArray result = suggester.suggest(req, resp);
+                indexer.makeResponse(result, req, resp);
+            }
+			else if (req.getParameter("q") == null) {
 				indexer.info(req, resp);
 			} else {
 				indexer.search(req, resp);
