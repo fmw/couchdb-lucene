@@ -226,7 +226,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 	private long ddoc_seq;
 
 	private long lastCommit;
-	
+
 	private final CountDownLatch latch = new CountDownLatch(1);
 
 	private final Logger logger;
@@ -554,7 +554,6 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 							.getParameter("sort"));
 					final int skip = getIntParameter(req, "skip", 0);
 
-                    
 					if (sort == null) {
 						td = searcher.search(q, null, skip + limit);
 					} else {
@@ -656,7 +655,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 			state.returnSearcher(searcher);
 		}
 
-	    makeResponse(result, req, resp);	
+	    makeResponse(result, req, resp);
 	}
 
 	private String[] getQueryStrings(final HttpServletRequest req) {
@@ -677,7 +676,7 @@ public final class DatabaseIndexer implements Runnable, ResponseHandler<Void> {
 		Context.exit();
 		latch.countDown();
 	}
-	
+
 	public boolean isClosed() {
 	    return closed;
 	}

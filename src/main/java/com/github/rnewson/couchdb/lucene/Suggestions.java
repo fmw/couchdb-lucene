@@ -2,12 +2,12 @@ package com.github.rnewson.couchdb.lucene;
 
 /**
  * Copyright 2010 Filip de Waard
- * 
- * Licensed under the Apache License, Version 2.0 (the "License"); 
- * you may not use this file except in compliance with the License. 
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0 
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -45,11 +45,11 @@ public final class Suggestions {
 	private final Logger logger;
 	private final Directory dir;
 
-    public Suggestions(final File root, final IndexReader reader) 
+    public Suggestions(final File root, final IndexReader reader)
             throws IOException {
         this.reader = reader;
 		this.logger = Logger.getLogger(Suggestions.class.getName() + ".");
-        
+
         UUID uuid = UUID.randomUUID();
         File directory = new File(root, uuid.toString());
         this.dir = FSDirectory.open(directory);
@@ -62,7 +62,7 @@ public final class Suggestions {
 		final int limit = Integer.parseInt(req.getParameter("limit"));
 
         SpellChecker spellChecker = new SpellChecker(this.dir);
-        spellChecker.indexDictionary(new LuceneDictionary(this.reader, 
+        spellChecker.indexDictionary(new LuceneDictionary(this.reader,
             suggestField));
 
         String[] suggestions = spellChecker.suggestSimilar(term, limit);
@@ -78,7 +78,7 @@ public final class Suggestions {
         }
 
         queryRow.put("rows", rows);
-        result.put(queryRow); 
+        result.put(queryRow);
 
         return result;
     }
